@@ -15,7 +15,7 @@ As we all know, Scrap Mechanic save files break sometimes. I've created this too
 - Setting custom backup interval.
 - Stores last 12 backups (the oldest one is removed when 13th backup is created).
 - Watches for file changes - only creates backup if one of selected save files have changed.
-- Backups are created in form of `.zip` archives (you can restore them manually at your convinience).
+- Backups are created in form of `.zip` archives (you can restore them manually at your convenience).
 - Closes to tray.
 - Optional auto-starting at system login.
 
