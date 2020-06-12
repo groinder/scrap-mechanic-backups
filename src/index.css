@@ -9,6 +9,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto auto;
     row-gap: 15px;
+    min-height: 100vh;
 }
 
 .files-grid {

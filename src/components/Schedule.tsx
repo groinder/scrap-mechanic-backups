@@ -6,6 +6,7 @@ import { readdirSync, Dirent, unlinkSync, existsSync } from 'fs'
 import AdmZip from 'adm-zip'
 import cron, { ScheduledTask } from "node-cron"
 import sanitize from "sanitize-filename";
+import watch from "node-watch";
 
 const getDirectories = (source: string) =>
     readdirSync(source, { withFileTypes: true })
@@ -14,10 +15,12 @@ const getDirectories = (source: string) =>
 
 const scrapMechanicPath = [process.env.APPDATA, "Axolot Games", "Scrap Mechanic", "User"];
 
-const maxStoredBackups = 3;
+const maxStoredBackups = 12;
 
 export const Schedule: FC = () => {
     const cronRef = useRef<ScheduledTask>(null);
+    const filesUpdatedRef = useRef<boolean>(false);
+    const watcherRef = useRef<ReturnType<typeof watch>>(null)
     const [perioid, setPerioid] = useState<number>(1);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [openAtLogin, setOpenAtLogin] = useState<boolean>(remote.app.getLoginItemSettings().openAtLogin);
@@ -58,7 +61,7 @@ export const Schedule: FC = () => {
     }, [backupsDirectory])
 
     const makeBackup = (saveFiles: string[], backupsDir: string) => {
-        if (saveFiles.length) {
+        if (saveFiles.length && filesUpdatedRef.current) {
             const archivesJSON = localStorage.getItem('archives');
             let archives = archivesJSON ? JSON.parse(archivesJSON) : [];
             if (archives.length === maxStoredBackups) {
@@ -76,8 +79,8 @@ export const Schedule: FC = () => {
             const archiveName = `backup-${sanitize((new Date()).toISOString())}.zip`;
             zip.writeZip(join(backupsDir, archiveName), (err) => {
                 if (!err) {
-
                     localStorage.setItem('archives', JSON.stringify([...archives, archiveName]))
+                    filesUpdatedRef.current = false;
                 }
                 console.log(err)
             });
@@ -93,7 +96,15 @@ export const Schedule: FC = () => {
             cronRef.current.destroy()
         }
 
+        if (watcherRef.current) {
+            watcherRef.current.close();
+        }
+
         if (saveFiles.length) {
+            watcherRef.current = watch(saveFiles, () => {
+                filesUpdatedRef.current = true;
+            });
+
             cronRef.current = cron.schedule(`*/${minutes} * * * *`, () => {
                 makeBackup(saveFiles, backupsDir);
             });

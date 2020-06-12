@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu } from 'electron';
+import { app, BrowserWindow, Tray, Menu, Notification } from 'electron';
 import { join } from 'path';
 declare const MAIN_WINDOW_WEBPACK_ENTRY: any;
 
@@ -24,15 +24,26 @@ if (!gotTheLock) {
     }
   })
 
+  const notifyOnClose = () => {
+    const notification = new Notification({
+      title: 'Scrap Mechanic Backups is still running',
+      body: 'The app runs in the background, right-click tray icon to close.',
+      timeoutType: 'default'
+    });
+
+    notification.show();
+  }
+
   const createWindow = () => {
     // Create the browser window.
     mainWindow = new BrowserWindow({
-      height: 561,
+      height: 600,
       width: 800,
       webPreferences: {
         nodeIntegration: true
       },
-      show: !app.getLoginItemSettings().openAtLogin
+      show: !app.getLoginItemSettings().openAtLogin,
+      autoHideMenuBar: true
     });
 
     // and load the index.html of the app.
@@ -47,6 +58,7 @@ if (!gotTheLock) {
     mainWindow.on('minimize', function (event) {
       event.preventDefault();
       mainWindow.hide();
+      notifyOnClose();
     });
 
     mainWindow.on('close', function (event) {
@@ -54,6 +66,7 @@ if (!gotTheLock) {
       if (!app.isQuiting) {
         event.preventDefault();
         mainWindow.hide();
+        notifyOnClose();
       }
 
       return false;
